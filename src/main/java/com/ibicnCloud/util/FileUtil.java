@@ -872,7 +872,6 @@ public class FileUtil {
             } else {
                 pathName = files[i].getName();
             }
-            System.out.println(pathName);
             if(files[i].isDirectory()) {
                 if(isOutBlankDir && basePath != null) {    
                     zo.putNextEntry(new ZipEntry(pathName+"/"));    //可以使空目录也放进去
