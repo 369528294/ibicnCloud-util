@@ -16,15 +16,15 @@ import com.alibaba.fastjson.JSONObject;
 
 /**
  * IP工具类
- * 
+ *
  * @author 孙宇
- * 
+ *
  */
 public class IpUtil {
 
 	/**
 	 * 获取登录用户的IP地址
-	 * 
+	 *
 	 * @param request
 	 * @return
 	 */
@@ -50,7 +50,7 @@ public class IpUtil {
 
 	/**
 	 * 通过IP获取地址(需要联网，调用淘宝的IP库)
-	 * 
+	 *
 	 * @param ip
 	 * @return
 	 */

@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileFilter;
 
 public class FileNameFilter implements FileFilter {
-	
+
 	private String keyword;
 
 	private boolean isExtension;
@@ -26,7 +26,7 @@ public class FileNameFilter implements FileFilter {
 	public static FileNameFilter getExtensionNameFilter(String keyword) {
 		return new FileNameFilter(keyword, true);
 	}
-	
+
 	/**
 	 * 不让实例化
 	 */
@@ -45,5 +45,5 @@ public class FileNameFilter implements FileFilter {
 
 		return (file.getName().toLowerCase().indexOf(this.keyword) >= 0);
 	}
-	
+
 }

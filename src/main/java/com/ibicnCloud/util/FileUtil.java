@@ -1,5 +1,6 @@
 package com.ibicnCloud.util;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,8 +11,13 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.text.NumberFormat;
 import java.util.LinkedList;
 import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -23,11 +29,13 @@ import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.tools.zip.ZipEntry;
 import org.apache.tools.zip.ZipOutputStream;
 
-public class FileUtil {
+import org.apache.commons.codec.binary.Base64;
+
+public class FileUtil extends FileUtils{
 
 	/**
 	 * 检测指定的文件是否存在；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 */
@@ -37,8 +45,108 @@ public class FileUtil {
 	}
 
 	/**
+	 * 取得文件的大小
+	 * @param path
+	 * @return
+	 * @throws Exception
+	 */
+	public static long getFileSize(String path) {// 取得文件大小
+		File file = new File(path);
+		long s = 0;
+		if (file.exists()) {
+			if (file.isDirectory()) {
+				return getFolderSize(file);
+			} else {
+				s = file.length();
+			}
+		}
+		return s;
+	}
+
+	/**
+	 * 取得文件的大小
+	 * @param path
+	 * @return
+	 * @throws Exception
+	 */
+	public static long getFileSize(File file) {// 取得文件大小
+		long s = 0;
+		if (file.exists()) {
+			if (file.isDirectory()) {
+				return getFolderSize(file);
+			} else {
+				s = file.length();
+			}
+		}
+		return s;
+	}
+
+	/**
+	 * 获得文件夹的大小
+	 * @param f
+	 * @return
+	 * @throws Exception
+	 */
+	public static long getFolderSize(String path)// 取得文件夹大小
+	{
+		File file = new File(path);
+		long size = 0;
+		if (file.isDirectory()) {
+			File flist[] = file.listFiles();
+			for (int i = 0; i < flist.length; i++) {
+				if (flist[i].isDirectory()) {
+					size = size + getFolderSize(flist[i]);
+				} else {
+					size = size + flist[i].length();
+				}
+			}
+		}
+		return size;
+	}
+
+	/**
+	 * 获得文件夹的大小
+	 * @param file
+	 * @return
+	 * @throws Exception
+	 */
+	public static long getFolderSize(File file)// 取得文件夹大小
+	{
+		long size = 0;
+		if (file.isDirectory()) {
+			File flist[] = file.listFiles();
+			for (int i = 0; i < flist.length; i++) {
+				if (flist[i].isDirectory()) {
+					size = size + getFolderSize(flist[i]);
+				} else {
+					size = size + flist[i].length();
+				}
+			}
+		}
+		return size;
+	}
+
+	public static String formetFileSize(long fileS) {// 转换文件大小
+		NumberFormat nbf = NumberFormat.getInstance();
+		nbf.setMinimumFractionDigits(2);
+		nbf.setMaximumFractionDigits(2);
+		nbf.setGroupingUsed(false);
+		String fileSizeString = "";
+		if (fileS < 1024) {
+			fileSizeString = nbf.format((double) fileS) + "B";
+		} else if (fileS < 1048576) {
+			fileSizeString = nbf.format((double) fileS / 1024) + "K";
+		} else if (fileS < 1073741824) {
+			fileSizeString = nbf.format((double) fileS / 1048576) + "M";
+		} else {
+			fileSizeString = nbf.format((double) fileS / 1073741824) + "G";
+		}
+		return fileSizeString;
+	}
+
+	/**
 	 * 检测指定的文件是否存在；
-	 * 
+	 *
 	 * @param file
 	 * @return
 	 */
@@ -51,7 +159,7 @@ public class FileUtil {
 
 	/**
 	 * 按照系统平台规范，格式化目录实际访问路径，规范：d:/directory/；
-	 * 
+	 *
 	 * @param realpath
 	 * @return
 	 */
@@ -66,7 +174,7 @@ public class FileUtil {
 
 	/**
 	 * 按照系统平台规范，格式化文件实际访问路径，规范：d:/directory/file.ext；
-	 * 
+	 *
 	 * @param realpath
 	 * @return
 	 */
@@ -79,7 +187,7 @@ public class FileUtil {
 
 	/**
 	 * 根据指定路径获取一个文件对象 File ；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 */
@@ -89,7 +197,7 @@ public class FileUtil {
 
 	/**
 	 * 获取一个指定的文件路径中的文件目录路径，以 "/" 结尾 (无论是一个网络路径URL，还是一个物理路径)；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 */
@@ -106,7 +214,7 @@ public class FileUtil {
 
 	/**
 	 * 获取一个指定的文件路径中的文件名，包含扩展名 (无论是一个网络路径URL，还是一个物理路径)；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 */
@@ -123,7 +231,7 @@ public class FileUtil {
 
 	/**
 	 * 获取一个指定的文件路径中的主文件名，无扩展名 (无论是一个网络路径URL，还是一个物理路径)；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 */
@@ -137,7 +245,7 @@ public class FileUtil {
 
 	/**
 	 * 根据文件名或文件路径获取文件的扩展名 (无论是一个网络路径URL，还是一个物理路径)；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 */
@@ -151,7 +259,7 @@ public class FileUtil {
 
 	/**
 	 * 获取某个指定路径下的文件名并保存在一个列表中；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 */
@@ -161,7 +269,7 @@ public class FileUtil {
 
 	/**
 	 * 获取某个指定路径下的文件名并保存在一个列表中，并指定扩展名；
-	 * 
+	 *
 	 * @param path
 	 * @param ext
 	 * @return
@@ -188,7 +296,7 @@ public class FileUtil {
 
 	/**
 	 * 获取某个指定路径下的目录并保存在一个列表中；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 */
@@ -210,7 +318,7 @@ public class FileUtil {
 
 	/**
 	 * 重新命名指定文件；
-	 * 
+	 *
 	 * @param srcPath
 	 * @param aimPath
 	 * @throws UtilException
@@ -229,7 +337,7 @@ public class FileUtil {
 
 	/**
 	 * 重新命名指定文件夹；
-	 * 
+	 *
 	 * @param srcPath
 	 * @param aimPath
 	 * @throws UtilException
@@ -248,7 +356,7 @@ public class FileUtil {
 
 	/**
 	 * 获取某个指定路径下的文件并保存在一个列表中；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 */
@@ -258,7 +366,7 @@ public class FileUtil {
 
 	/**
 	 * 获取某个指定路径下的文件并保存在一个列表中，并指定获取文件的扩展名；
-	 * 
+	 *
 	 * @param path
 	 * @param ext
 	 * @return
@@ -284,7 +392,7 @@ public class FileUtil {
 
 	/**
 	 * 获取某个指定路径下的文件夹并保存在一个列表中；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 */
@@ -304,7 +412,7 @@ public class FileUtil {
 
 	/**
 	 * 创建一个指定路径的文件；
-	 * 
+	 *
 	 * @param realpath
 	 * @throws UtilException
 	 */
@@ -321,7 +429,7 @@ public class FileUtil {
 
 	/**
 	 * 删除一个指定路径的文件；
-	 * 
+	 *
 	 * @param realpath
 	 */
 	public static void deleteFile(String realpath) {
@@ -332,7 +440,7 @@ public class FileUtil {
 
 	/**
 	 * 创建一个指定路径的文件夹；
-	 * 
+	 *
 	 * @param realpath
 	 */
 	public static void createFolder(String realpath) {
@@ -347,7 +455,7 @@ public class FileUtil {
 
 	/**
 	 * 删除一个指定路径的文件夹，如果文件夹内容有文件则一并删除；
-	 * 
+	 *
 	 * @param realpath
 	 * @throws UtilException
 	 */
@@ -357,7 +465,7 @@ public class FileUtil {
 
 	/**
 	 * 删除一个指定路径的文件夹，并指定如果文件夹内容有文件，是否一并删除；
-	 * 
+	 *
 	 * @param realpath
 	 * @param deleteAll
 	 * @throws UtilException
@@ -387,7 +495,7 @@ public class FileUtil {
 
 	/**
 	 * 拷贝目录，并指定是否保留原来的日期；
-	 * 
+	 *
 	 * @param srcDir
 	 * @param destDir
 	 * @param keepDate
@@ -403,7 +511,7 @@ public class FileUtil {
 
 	/**
 	 * 拷贝文件，并指定是否保留原来的日期；
-	 * 
+	 *
 	 * @param src
 	 * @param dest
 	 * @param keepDate
@@ -419,7 +527,7 @@ public class FileUtil {
 
 	/**
 	 * 抓取文件，从指定的Url地址抓取文件并保存到指定路径；
-	 * 
+	 *
 	 * @param url
 	 * @param path
 	 * @throws UtilException
@@ -430,7 +538,7 @@ public class FileUtil {
 
 	/**
 	 * 抓取文件，从指定的Url地址抓取文件并保存到指定文件中；
-	 * 
+	 *
 	 * @param url
 	 * @param file
 	 * @throws UtilException
@@ -445,20 +553,21 @@ public class FileUtil {
 
 	/**
 	 * 抓取文件，从指定的Url地址抓取文件并保存到指定路径，同时指定保存文件时的字符集；
-	 * 
+	 *
 	 * @param url
 	 * @param path
 	 * @param charset
 	 * @throws UtilException
+	 * @throws UtilException
 	 */
-	public static void copyUrlToFile(String url, String path, String charset) throws UtilException {
+	public static void copyUrlToFile(String url, String path, String charset) throws IOException, UtilException {
 		String content = copyUrlToString(url);
-		writeStringToFile(new File(path), content, charset);
+		FileUtils.writeStringToFile(new File(path), content, charset);
 	}
 
 	/**
 	 * 抓取文件，从指定的Url地址抓取文件并保存到字符串中；
-	 * 
+	 *
 	 * @param url
 	 * @return
 	 * @throws UtilException
@@ -481,7 +590,7 @@ public class FileUtil {
 
 	/**
 	 * 抓取文件，从指定的Url地址抓取文件并保存到字符串中，并指定字符集；
-	 * 
+	 *
 	 * @param url
 	 * @param charset
 	 * @return
@@ -504,7 +613,7 @@ public class FileUtil {
 
 	/**
 	 * 将文件内容读取到一个字符串中；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 * @throws UtilException
@@ -518,39 +627,8 @@ public class FileUtil {
 	}
 
 	/**
-	 * 将文件内容读取到一个字符串中；
-	 * 
-	 * @param file
-	 * @return
-	 * @throws UtilException
-	 */
-	public static String readFileToString(File file) throws UtilException {
-		try {
-			return FileUtils.readFileToString(file);
-		} catch (IOException e) {
-			throw new UtilException("读取文件至字符串出错", e);
-		}
-	}
-
-	/**
 	 * 将文件内容读取到一个字符串中，并指定字符编码类型；
-	 * 
-	 * @param file
-	 * @param charset
-	 * @return
-	 * @throws UtilException
-	 */
-	public static String readFileToString(File file, String charset) throws UtilException {
-		try {
-			return FileUtils.readFileToString(file, charset);
-		} catch (IOException e) {
-			throw new UtilException("读取文件至字符串出错", e);
-		}
-	}
-	
-	/**
-	 * 将文件内容读取到一个字符串中，并指定字符编码类型；
-	 * 
+	 *
 	 * @param file
 	 * @param charset
 	 * @return
@@ -566,7 +644,7 @@ public class FileUtil {
 
 	/**
 	 * 将文件中每一行的内容读取到一个列表中；
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 * @throws UtilException
@@ -581,7 +659,7 @@ public class FileUtil {
 
 	/**
 	 * 将文件中每一行的内容读取到一个列表中；
-	 * 
+	 *
 	 * @param file
 	 * @return
 	 * @throws UtilException
@@ -596,7 +674,7 @@ public class FileUtil {
 
 	/**
 	 * 将文件中每一行的内容读取到一个列表中，并指定字符编码类型；
-	 * 
+	 *
 	 * @param file
 	 * @param charset
 	 * @return
@@ -612,33 +690,19 @@ public class FileUtil {
 
 	/**
 	 * 将字符串中的内容写到一个文件中；
-	 * 
+	 *
 	 * @param path
 	 * @param content
 	 * @throws UtilException
+	 * @throws IOException
 	 */
-	public static void writeStringToFile(String path, String content) throws UtilException {
-		writeStringToFile(new File(path), content, "UTF-8");
-	}
-
-	/**
-	 * 将字符串中的内容写到一个文件中；
-	 * 
-	 * @param file
-	 * @param content
-	 * @throws UtilException
-	 */
-	public static void writeStringToFile(File file, String content, String encoding) throws UtilException {
-		try {
-			FileUtils.writeStringToFile(file, content, encoding);
-		} catch (IOException e) {
-			throw new UtilException("写入文件错误", e);
-		}
+	public static void writeStringToFile(String path, String content) throws IOException {
+		FileUtils.writeStringToFile(new File(path), content, "UTF-8");
 	}
 
 	/**
 	 * 将列表中的每个项目的 toString() 的内容写到一个文件中；
-	 * 
+	 *
 	 * @param path
 	 * @param list
 	 * @throws UtilException
@@ -653,7 +717,7 @@ public class FileUtil {
 
 	/**
 	 * 将列表中的每个项目的 toString() 的内容写到一个文件中，并指定每个条目的字符编码类型；
-	 * 
+	 *
 	 * @param path
 	 * @param list
 	 * @param charset
@@ -669,7 +733,7 @@ public class FileUtil {
 
 	/**
 	 * 将列表中的每个项目的 toString() 的内容写到一个文件中；
-	 * 
+	 *
 	 * @param file
 	 * @param list
 	 * @throws UtilException
@@ -684,7 +748,7 @@ public class FileUtil {
 
 	/**
 	 * 将列表中的每个项目的 toString() 的内容写到一个文件中，并指定文件和每个条目的字符编码类型；
-	 * 
+	 *
 	 * @param file
 	 * @param list
 	 * @param charset
@@ -700,7 +764,7 @@ public class FileUtil {
 
 	/**
 	 * 将列表中的每个项目的 toString() 的内容写到一个文件中，并指定文件和每个条目的字符编码类型；
-	 * 
+	 *
 	 * @param file
 	 * @param fileCharset
 	 * @param list
@@ -717,7 +781,7 @@ public class FileUtil {
 
 	/**
 	 * 将字符串中的内容追加到一个文件中；
-	 * 
+	 *
 	 * @param path
 	 * @param content
 	 * @throws UtilException
@@ -728,7 +792,7 @@ public class FileUtil {
 
 	/**
 	 * 将字符串中的内容追加到一个文件中，并指定编码类型；
-	 * 
+	 *
 	 * @param path
 	 * @param content
 	 * @param charset
@@ -740,7 +804,7 @@ public class FileUtil {
 
 	/**
 	 * 将字符串中的内容追加到一个文件中；
-	 * 
+	 *
 	 * @param file
 	 * @param content
 	 * @throws UtilException
@@ -751,7 +815,7 @@ public class FileUtil {
 
 	/**
 	 * 将字符串中的内容追加到一个文件中，并指定编码类型；
-	 * 
+	 *
 	 * @param file
 	 * @param content
 	 * @param charset
@@ -765,12 +829,12 @@ public class FileUtil {
 		} catch (IOException e) {
 			throw new UtilException("追加到一个文件失败！", e);
 		}
-		
+
 	}
 
 	/**
 	 * 将列表中的每个项目的 toString() 的内容追加到一个文件中；
-	 * 
+	 *
 	 * @param path
 	 * @param list
 	 * @throws UtilException
@@ -781,7 +845,7 @@ public class FileUtil {
 
 	/**
 	 * 将列表中的每个项目的 toString() 的内容追加到一个文件中；
-	 * 
+	 *
 	 * @param file
 	 * @param list
 	 * @throws UtilException
@@ -800,7 +864,7 @@ public class FileUtil {
 			throw new UtilException("文件 '" + file + "' 无法被创建！");
 		}
 
-		
+
 		try {
 			FileWriterWithEncoding fw = new FileWriterWithEncoding(file, "UTF-8", true);
 			for (int i = 0; i < CollectionUtil.size(list); i++) {
@@ -812,18 +876,22 @@ public class FileUtil {
 			throw new UtilException("追加文件失败！", e);
 		}
 	}
-	
+
 	/**
 	 * 压缩文件
-	 * 
+	 *
 	 * @param srcfile
 	 *            File[] 需要压缩的文件列表
 	 * @param zipfile
 	 *            File 压缩后的文件
+	 * @throws UtilException
 	 */
-	public static int ZipFiles(File[] srcfile, String zipFile) {
+	public static int ZipFiles(File[] srcfile, String zipFile) throws UtilException {
 		try {
 			// Create the ZIP file
+//			if (!FileUtil.isExist(zipFile)) {
+//				FileUtil.createFile(zipFile);
+//			}
 			OutputStream os = new FileOutputStream(zipFile);
 			BufferedOutputStream bs = new BufferedOutputStream(os);
 			ZipOutputStream out = new ZipOutputStream(bs);
@@ -841,52 +909,96 @@ public class FileUtil {
 			return -1;
 		}
 	}
-	
+
 	/**
-     * @param path 要压缩的路径, 可以是目录, 也可以是文件.
-     * @param basePath 如果path是目录,它一般为new File(path), 作用是:使输出的zip文件以此目录为根目录, 如果为null它只压缩文件, 不解压目录.
-     * @param zo 压缩输出流
-     * @param isRecursive 是否递归
-     * @param isOutBlankDir 是否输出空目录, 要使输出空目录为true,同时baseFile不为null.
-     * @throws IOException
-     */
-    public static void zip(File inFile, File basePath, ZipOutputStream zo, boolean isRecursive, boolean isOutBlankDir) throws IOException {
-        File[] files = new File[0];
-        if(inFile.isDirectory()) {    //是目录
-            files = inFile.listFiles();
-        } else if(inFile.isFile()) {    //是文件
-            files = new File[1];
-            files[0] = inFile;
-        }
-        byte[] buf = new byte[1024];
-        int len;
-        //System.out.println("baseFile: "+baseFile.getPath());
-        for(int i=0; i<files.length; i++) {
-            String pathName = "";
-            if(basePath != null) {
-                if(basePath.isDirectory()) {
-                    pathName = files[i].getPath().substring(basePath.getPath().length()+1);
-                } else {//文件
-                    pathName = files[i].getPath().substring(basePath.getParent().length()+1);
-                }
-            } else {
-                pathName = files[i].getName();
-            }
-            if(files[i].isDirectory()) {
-                if(isOutBlankDir && basePath != null) {    
-                    zo.putNextEntry(new ZipEntry(pathName+"/"));    //可以使空目录也放进去
-                }
-                if(isRecursive) {    //递归
-                    zip(files[i], basePath, zo, isRecursive, isOutBlankDir);
-                }
-            } else {
-                FileInputStream fin = new FileInputStream(files[i]);
-                zo.putNextEntry(new ZipEntry(pathName));
-                while((len=fin.read(buf))>0) {
-                    zo.write(buf,0,len);
-                }
-                fin.close();
-            }
-        }
-    }
+	 * @param path 要压缩的路径, 可以是目录, 也可以是文件.
+	 * @param basePath 如果path是目录,它一般为new File(path), 作用是:使输出的zip文件以此目录为根目录, 如果为null它只压缩文件, 不解压目录.
+	 * @param zo 压缩输出流
+	 * @param isRecursive 是否递归
+	 * @param isOutBlankDir 是否输出空目录, 要使输出空目录为true,同时baseFile不为null.
+	 * @throws IOException
+	 */
+	public static void zip(File inFile, File basePath, ZipOutputStream zo, boolean isRecursive, boolean isOutBlankDir) throws IOException {
+		File[] files = new File[0];
+		if(inFile.isDirectory()) {    //是目录
+			files = inFile.listFiles();
+		} else if(inFile.isFile()) {    //是文件
+			files = new File[1];
+			files[0] = inFile;
+		}
+		byte[] buf = new byte[1024];
+		int len;
+		//System.out.println("baseFile: "+baseFile.getPath());
+		for(int i=0; i<files.length; i++) {
+			String pathName = "";
+			if(basePath != null) {
+				if(basePath.isDirectory()) {
+					pathName = files[i].getPath().substring(basePath.getPath().length()+1);
+				} else {//文件
+					pathName = files[i].getPath().substring(basePath.getParent().length()+1);
+				}
+			} else {
+				pathName = files[i].getName();
+			}
+			if(files[i].isDirectory()) {
+				if(isOutBlankDir && basePath != null) {
+					zo.putNextEntry(new ZipEntry(pathName+"/"));    //可以使空目录也放进去
+				}
+				if(isRecursive) {    //递归
+					zip(files[i], basePath, zo, isRecursive, isOutBlankDir);
+				}
+			} else {
+				FileInputStream fin = new FileInputStream(files[i]);
+				zo.putNextEntry(new ZipEntry(pathName));
+				while((len=fin.read(buf))>0) {
+					zo.write(buf,0,len);
+				}
+				fin.close();
+			}
+		}
+	}
+
+	public static void download(String fileName, String filePath, HttpServletResponse response, HttpServletRequest request) {
+		BufferedInputStream bis = null;
+		BufferedOutputStream bos = null;
+		OutputStream os = null;
+		InputStream is = null;
+		try {
+			File downloadFile = new File(filePath);
+			is = new FileInputStream(downloadFile);
+			bis = new BufferedInputStream(is);
+			os = response.getOutputStream();
+			bos = new BufferedOutputStream(os);
+			String agent = (String) request.getHeader("USER-AGENT");
+			if (agent != null && agent.indexOf("MSIE") == -1) {// FF
+				String enableFileName = "=?UTF-8?B?" + (new String(Base64.encodeBase64(fileName.getBytes("UTF-8")))) + "?=";
+				response.setHeader("Content-Disposition", "attachment; filename=" + enableFileName);
+			} else { // IE
+				response.setHeader("Content-disposition", "attachment;filename=" + URLEncoder.encode(fileName, "utf-8"));
+			}
+			int bytesRead = 0;
+			byte[] buffer = new byte[8192];
+			while ((bytesRead = bis.read(buffer, 0, 8192)) != -1) {
+				bos.write(buffer, 0, bytesRead);
+			}
+			bos.flush();
+			is.close();
+			bis.close();
+			os.flush();
+			os.close();
+			os = null;
+			response.flushBuffer();
+			bos.close();
+		} catch (Exception e) {
+			// e.printStackTrace();
+		}
+	}
+
+	public static void main(String[] args) {
+		try {
+			System.out.println(FileUtil.getFileSize("D:/apache-tomcat-7.0.52"));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }
